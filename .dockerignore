@@ -1,0 +1,129 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.settings/
+.project
+.classpath
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+*.log
+*.log.gz
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
+docker-compose*.yml
+
+# CI/CD
+.github/
+.gitlab/
+.teamcity/
+.jenkins
+.travis.yml
+
+# Environment
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+
+# Application specific
+*.tmp
+*.bak
+*.orig
+*.rej
+
+# Tests
+**/test-output/
+**/surefire-reports/
+**/fail-safe-reports/
+*.test
+*.tests
+
+# Heap dumps
+*.hprof
+*.heap
+
+# Config files with sensitive data
+application-prod.yml
+application-production.yml
+bootstrap-prod.yml
+bootstrap-production.yml
+
+# Spring Boot
+springboot-devtools.pid
+
+# Node (if any)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Frontend (if any)
+dist/
+build/
+out/
+
+# Temporary files
+*.lock
+*.pid
+*.seed
+*.pid.lock
+
+# Helm charts (if any)
+charts/
+*.tgz
+
+# Kubernetes
+k8s/
+*.kubeconfig
+
+# Local development
+local/
+dev/
+temp/
+tmp/
+
+# Documentation
+README.md
+CHANGELOG.md
+CONTRIBUTING.md
+LICENSE
+*.md
+docs/
+
+# Scripts
+*.sh
+*.bat
+*.cmd
+*.ps1
