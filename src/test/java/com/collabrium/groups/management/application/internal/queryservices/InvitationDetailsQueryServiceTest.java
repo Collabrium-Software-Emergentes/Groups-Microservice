@@ -392,4 +392,86 @@ public class InvitationDetailsQueryServiceTest {
     assertThat(dto.groupCode()).isEqualTo("ABC123456");
     assertThat(dto.memberCount()).isEqualTo(5);
   }
+
+  @Test
+  @DisplayName("handle(GetInvitationsOfMyGroupQuery) - invitation without associated user: returns details with null user data")
+  void handle_getInvitationsOfMyGroup_userNotAssociated_returnsInvitationDetailsWithNullUserData() {
+
+    // Arrange
+    var query = new GetInvitationsOfMyGroupQuery(1L);
+
+    var owner = new UserOnlyResource(
+      "leader",
+      "Leader",
+      "Doe",
+      null,
+      "leader@test.com",
+      20L,
+      10L
+    );
+
+    var group = mock(Group.class);
+    var invitation = mock(Invitation.class);
+
+    when(iamQueryPort.getUserOnlyById(1L))
+      .thenReturn(owner);
+
+    when(groupRepository.findByLeaderId(20L))
+      .thenReturn(Optional.of(group));
+
+    when(group.getId())
+      .thenReturn(50L);
+
+    when(invitationRepository.findByGroupId(50L))
+      .thenReturn(List.of(invitation));
+
+    when(invitation.getId())
+      .thenReturn(100L);
+
+    when(invitation.getMemberId())
+      .thenReturn(MemberId.of(30L));
+
+    when(invitation.getGroup())
+      .thenReturn(group);
+
+    when(iamQueryPort.getUserByMemberId(30L))
+      .thenReturn(null);
+
+    when(group.getName())
+      .thenReturn("Backend Team");
+
+    when(group.getImgUrl())
+      .thenReturn(null);
+
+    when(group.getDescription())
+      .thenReturn("Spring Boot developers");
+
+    when(group.getCode())
+      .thenReturn(GroupCode.fromString("ABC123456"));
+
+    when(group.getMemberCount())
+      .thenReturn(5);
+
+    // Act
+    var result = service.handle(query);
+
+    // Assert
+    assertThat(result).hasSize(1);
+
+    var dto = result.getFirst();
+
+    assertThat(dto.id()).isEqualTo(100L);
+
+    assertThat(dto.userId()).isNull();
+    assertThat(dto.username()).isNull();
+    assertThat(dto.name()).isNull();
+    assertThat(dto.surname()).isNull();
+    assertThat(dto.imgUrl()).isNull();
+
+    assertThat(dto.groupId()).isEqualTo(50L);
+    assertThat(dto.groupName()).isEqualTo("Backend Team");
+    assertThat(dto.groupDescription()).isEqualTo("Spring Boot developers");
+    assertThat(dto.groupCode()).isEqualTo("ABC123456");
+    assertThat(dto.memberCount()).isEqualTo(5);
+  }
 }
