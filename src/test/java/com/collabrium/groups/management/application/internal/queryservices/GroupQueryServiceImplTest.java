@@ -2,8 +2,10 @@ package com.collabrium.groups.management.application.internal.queryservices;
 
 import com.collabrium.groups.management.application.internal.outboundservices.ports.IamQueryPort;
 import com.collabrium.groups.management.domain.model.aggregates.Group;
+import com.collabrium.groups.management.domain.model.queries.GetGroupByCodeQuery;
 import com.collabrium.groups.management.domain.model.queries.GetGroupByIdQuery;
 import com.collabrium.groups.management.domain.model.queries.GetGroupByLeaderIdQuery;
+import com.collabrium.groups.management.domain.model.valueobjects.GroupCode;
 import com.collabrium.groups.management.infrastructure.persistence.jpa.repositories.GroupRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -84,6 +86,39 @@ public class GroupQueryServiceImplTest {
     var query = new GetGroupByLeaderIdQuery(10L);
 
     when(groupRepository.findByLeaderId(10L)).thenReturn(Optional.empty());
+
+    // Act
+    var result = service.handle(query);
+
+    // Assert
+    assertThat(result).isEmpty();
+  }
+
+  @Test
+  @DisplayName("handle(GetGroupByCodeQuery) - valid code and existing group: returns group")
+  void handle_getGroupByCode_validCode_existingGroup_returnsGroup() {
+    // Arrange
+    var group = mock(Group.class);
+    var query = new GetGroupByCodeQuery("ABC123456");
+    var code = GroupCode.fromString("ABC123456");
+
+    when(groupRepository.findByCode(code)).thenReturn(Optional.of(group));
+
+    // Act
+    var result = service.handle(query);
+
+    // Assert
+    assertThat(result).containsSame(group);
+  }
+
+  @Test
+  @DisplayName("handle(GetGroupByCodeQuery) - valid code and no group found: returns empty")
+  void handle_getGroupByCode_validCode_noGroupFound_returnsEmpty() {
+    // Arrange
+    var query = new GetGroupByCodeQuery("ABC123456");
+    var code = GroupCode.fromString("ABC123456");
+
+    when(groupRepository.findByCode(code)).thenReturn(Optional.empty());
 
     // Act
     var result = service.handle(query);
