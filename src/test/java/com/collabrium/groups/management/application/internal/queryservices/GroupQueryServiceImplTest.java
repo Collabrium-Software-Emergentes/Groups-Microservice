@@ -6,8 +6,10 @@ import com.collabrium.groups.management.domain.model.aggregates.Group;
 import com.collabrium.groups.management.domain.model.queries.GetGroupByCodeQuery;
 import com.collabrium.groups.management.domain.model.queries.GetGroupByIdQuery;
 import com.collabrium.groups.management.domain.model.queries.GetGroupByLeaderIdQuery;
+import com.collabrium.groups.management.domain.model.queries.GetGroupByUserIdQuery;
 import com.collabrium.groups.management.domain.model.valueobjects.GroupCode;
 import com.collabrium.groups.management.infrastructure.persistence.jpa.repositories.GroupRepository;
+import com.collabrium.groups.shared.infrastructure.clients.iam.resources.UserOnlyResource;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -165,5 +167,45 @@ public class GroupQueryServiceImplTest {
       .hasMessage(
         "Invalid group code format: 'abc-12345'. Expected: 9 alphanumeric characters (0-9, A-Z)"
       );
+  }
+
+  @Test
+  @DisplayName("handle(GetGroupByUserIdQuery) - user not found: returns empty")
+  void handle_getGroupByUserId_userNotFound_returnsEmpty() {
+    // Arrange
+    var query = new GetGroupByUserIdQuery(1L);
+
+    when(iamQueryPort.getUserOnlyById(1L)).thenReturn(null);
+
+    // Act
+    var result = service.handle(query);
+
+    // Assert
+    assertThat(result).isEmpty();
+  }
+
+  @Test
+  @DisplayName("handle(GetGroupByUserIdQuery) - user without leader id: returns empty")
+  void handle_getGroupByUserId_userWithoutLeaderId_returnsEmpty() {
+    // Arrange
+    var query = new GetGroupByUserIdQuery(1L);
+
+    var user = new UserOnlyResource(
+      "john",
+      "John",
+      "Doe",
+      null,
+      "john@test.com",
+      null,
+      10L
+    );
+
+    when(iamQueryPort.getUserOnlyById(1L)).thenReturn(user);
+
+    // Act
+    var result = service.handle(query);
+
+    // Assert
+    assertThat(result).isEmpty();
   }
 }
