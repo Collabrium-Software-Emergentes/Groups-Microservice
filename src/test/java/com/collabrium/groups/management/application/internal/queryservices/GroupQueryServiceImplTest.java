@@ -208,4 +208,57 @@ public class GroupQueryServiceImplTest {
     // Assert
     assertThat(result).isEmpty();
   }
+
+  @Test
+  @DisplayName("handle(GetGroupByUserIdQuery) - user with existing leader group: returns group")
+  void handle_getGroupByUserId_existingLeaderGroup_returnsGroup() {
+    // Arrange
+    var group = mock(Group.class);
+    var query = new GetGroupByUserIdQuery(1L);
+
+    var user = new UserOnlyResource(
+      "john",
+      "John",
+      "Doe",
+      null,
+      "john@test.com",
+      20L,
+      null
+    );
+
+    when(iamQueryPort.getUserOnlyById(1L)).thenReturn(user);
+    when(groupRepository.findByLeaderId(20L)).thenReturn(Optional.of(group));
+
+    // Act
+    var result = service.handle(query);
+
+    // Assert
+    assertThat(result).containsSame(group);
+  }
+
+  @Test
+  @DisplayName("handle(GetGroupByUserIdQuery) - user leader group not found: returns empty")
+  void handle_getGroupByUserId_leaderGroupNotFound_returnsEmpty() {
+    // Arrange
+    var query = new GetGroupByUserIdQuery(1L);
+
+    var user = new UserOnlyResource(
+      "john",
+      "John",
+      "Doe",
+      null,
+      "john@test.com",
+      20L,
+      null
+    );
+
+    when(iamQueryPort.getUserOnlyById(1L)).thenReturn(user);
+    when(groupRepository.findByLeaderId(20L)).thenReturn(Optional.empty());
+
+    // Act
+    var result = service.handle(query);
+
+    // Assert
+    assertThat(result).isEmpty();
+  }
 }
