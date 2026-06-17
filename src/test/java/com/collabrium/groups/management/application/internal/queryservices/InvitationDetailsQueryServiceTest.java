@@ -1,11 +1,14 @@
 package com.collabrium.groups.management.application.internal.queryservices;
 
 import com.collabrium.groups.management.application.internal.outboundservices.ports.IamQueryPort;
+import com.collabrium.groups.management.domain.exceptions.GroupNotFoundException;
+import com.collabrium.groups.management.domain.exceptions.LeaderNotFoundException;
 import com.collabrium.groups.management.domain.exceptions.MemberNotFoundException;
 import com.collabrium.groups.management.domain.exceptions.UserNotFoundException;
 import com.collabrium.groups.management.domain.model.aggregates.Group;
 import com.collabrium.groups.management.domain.model.aggregates.Invitation;
 import com.collabrium.groups.management.domain.model.queries.GetInvitationByUserIdQuery;
+import com.collabrium.groups.management.domain.model.queries.GetInvitationsOfMyGroupQuery;
 import com.collabrium.groups.management.domain.model.valueobjects.GroupCode;
 import com.collabrium.groups.management.domain.model.valueobjects.MemberId;
 import com.collabrium.groups.management.infrastructure.persistence.jpa.repositories.GroupRepository;
@@ -183,5 +186,78 @@ public class InvitationDetailsQueryServiceTest {
     assertThat(dto.groupDescription()).isEqualTo("Spring Boot developers");
     assertThat(dto.groupCode()).isEqualTo("ABC123456");
     assertThat(dto.memberCount()).isEqualTo(5);
+  }
+
+  @Test
+  @DisplayName("handle(GetInvitationsOfMyGroupQuery) - user not found: throws UserNotFoundException")
+  void handle_getInvitationsOfMyGroup_userNotFound_throwsUserNotFoundException() {
+
+    // Arrange
+    var query = new GetInvitationsOfMyGroupQuery(1L);
+
+    when(iamQueryPort.getUserOnlyById(1L))
+      .thenReturn(null);
+
+    // Act & Assert
+    assertThatThrownBy(() -> service.handle(query))
+      .isInstanceOf(UserNotFoundException.class)
+      .hasMessage("User with id 1 was not found");
+  }
+
+
+  @Test
+  @DisplayName("handle(GetInvitationsOfMyGroupQuery) - user without leader id: throws LeaderNotFoundException")
+  void handle_getInvitationsOfMyGroup_userWithoutLeaderId_throwsLeaderNotFoundException() {
+
+    // Arrange
+    var query = new GetInvitationsOfMyGroupQuery(1L);
+
+    var user = new UserOnlyResource(
+      "john",
+      "John",
+      "Doe",
+      null,
+      "john@test.com",
+      null,
+      10L
+    );
+
+    when(iamQueryPort.getUserOnlyById(1L))
+      .thenReturn(user);
+
+    // Act & Assert
+    assertThatThrownBy(() -> service.handle(query))
+      .isInstanceOf(LeaderNotFoundException.class)
+      .hasMessage("Leader with id 1 was not found");
+  }
+
+
+  @Test
+  @DisplayName("handle(GetInvitationsOfMyGroupQuery) - leader without group: throws GroupNotFoundException")
+  void handle_getInvitationsOfMyGroup_leaderWithoutGroup_throwsGroupNotFoundException() {
+
+    // Arrange
+    var query = new GetInvitationsOfMyGroupQuery(1L);
+
+    var user = new UserOnlyResource(
+      "john",
+      "John",
+      "Doe",
+      null,
+      "john@test.com",
+      20L,
+      10L
+    );
+
+    when(iamQueryPort.getUserOnlyById(1L))
+      .thenReturn(user);
+
+    when(groupRepository.findByLeaderId(20L))
+      .thenReturn(Optional.empty());
+
+    // Act & Assert
+    assertThatThrownBy(() -> service.handle(query))
+      .isInstanceOf(GroupNotFoundException.class)
+      .hasMessage("Leader does not own a group");
   }
 }
