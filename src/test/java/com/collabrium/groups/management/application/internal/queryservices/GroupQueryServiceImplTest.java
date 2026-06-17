@@ -1,6 +1,7 @@
 package com.collabrium.groups.management.application.internal.queryservices;
 
 import com.collabrium.groups.management.application.internal.outboundservices.ports.IamQueryPort;
+import com.collabrium.groups.management.domain.exceptions.InvalidCodeException;
 import com.collabrium.groups.management.domain.model.aggregates.Group;
 import com.collabrium.groups.management.domain.model.queries.GetGroupByCodeQuery;
 import com.collabrium.groups.management.domain.model.queries.GetGroupByIdQuery;
@@ -17,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -125,5 +127,43 @@ public class GroupQueryServiceImplTest {
 
     // Assert
     assertThat(result).isEmpty();
+  }
+
+  @Test
+  @DisplayName("handle(GetGroupByCodeQuery) - null code: throws InvalidCodeException")
+  void handle_getGroupByCode_nullCode_throwsInvalidCodeException() {
+    // Arrange
+    var query = new GetGroupByCodeQuery(null);
+
+    // Act & Assert
+    assertThatThrownBy(() -> service.handle(query))
+      .isInstanceOf(InvalidCodeException.class)
+      .hasMessage("Group code cannot be null");
+  }
+
+  @Test
+  @DisplayName("handle(GetGroupByCodeQuery) - invalid code length: throws InvalidCodeException")
+  void handle_getGroupByCode_invalidLength_throwsInvalidCodeException() {
+    // Arrange
+    var query = new GetGroupByCodeQuery("ABC12");
+
+    // Act & Assert
+    assertThatThrownBy(() -> service.handle(query))
+      .isInstanceOf(InvalidCodeException.class)
+      .hasMessage("Group code must be exactly 9 characters. Received: 5 characters");
+  }
+
+  @Test
+  @DisplayName("handle(GetGroupByCodeQuery) - invalid code format: throws InvalidCodeException")
+  void handle_getGroupByCode_invalidFormat_throwsInvalidCodeException() {
+    // Arrange
+    var query = new GetGroupByCodeQuery("abc-12345");
+
+    // Act & Assert
+    assertThatThrownBy(() -> service.handle(query))
+      .isInstanceOf(InvalidCodeException.class)
+      .hasMessage(
+        "Invalid group code format: 'abc-12345'. Expected: 9 alphanumeric characters (0-9, A-Z)"
+      );
   }
 }
