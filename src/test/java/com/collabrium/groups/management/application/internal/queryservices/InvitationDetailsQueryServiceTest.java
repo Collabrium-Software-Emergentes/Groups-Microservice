@@ -21,6 +21,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -259,5 +260,136 @@ public class InvitationDetailsQueryServiceTest {
     assertThatThrownBy(() -> service.handle(query))
       .isInstanceOf(GroupNotFoundException.class)
       .hasMessage("Leader does not own a group");
+  }
+
+  @Test
+  @DisplayName("handle(GetInvitationsOfMyGroupQuery) - group without invitations: returns empty list")
+  void handle_getInvitationsOfMyGroup_groupWithoutInvitations_returnsEmptyList() {
+
+    // Arrange
+    var query = new GetInvitationsOfMyGroupQuery(1L);
+
+    var user = new UserOnlyResource(
+      "john",
+      "John",
+      "Doe",
+      null,
+      "john@test.com",
+      20L,
+      10L
+    );
+
+    var group = mock(Group.class);
+
+    when(iamQueryPort.getUserOnlyById(1L))
+      .thenReturn(user);
+
+    when(groupRepository.findByLeaderId(20L))
+      .thenReturn(Optional.of(group));
+
+    when(group.getId())
+      .thenReturn(50L);
+
+    when(invitationRepository.findByGroupId(50L))
+      .thenReturn(List.of());
+
+    // Act
+    var result = service.handle(query);
+
+    // Assert
+    assertThat(result).isEmpty();
+  }
+
+
+  @Test
+  @DisplayName("handle(GetInvitationsOfMyGroupQuery) - invitations with existing users: returns invitation details list")
+  void handle_getInvitationsOfMyGroup_existingUsers_returnsInvitationDetailsList() {
+
+    // Arrange
+    var query = new GetInvitationsOfMyGroupQuery(1L);
+
+    var owner = new UserOnlyResource(
+      "leader",
+      "Leader",
+      "Doe",
+      null,
+      "leader@test.com",
+      20L,
+      10L
+    );
+
+    var member = new UserOnlyResource(
+      "member01",
+      "Alice",
+      "Smith",
+      "member-img.jpg",
+      "member@test.com",
+      null,
+      30L
+    );
+
+    var group = mock(Group.class);
+    var invitation = mock(Invitation.class);
+
+    when(iamQueryPort.getUserOnlyById(1L))
+      .thenReturn(owner);
+
+    when(groupRepository.findByLeaderId(20L))
+      .thenReturn(Optional.of(group));
+
+    when(group.getId())
+      .thenReturn(50L);
+
+    when(invitationRepository.findByGroupId(50L))
+      .thenReturn(List.of(invitation));
+
+    when(invitation.getId())
+      .thenReturn(100L);
+
+    when(invitation.getMemberId())
+      .thenReturn(MemberId.of(30L));
+
+    when(invitation.getGroup())
+      .thenReturn(group);
+
+    when(iamQueryPort.getUserByMemberId(30L))
+      .thenReturn(member);
+
+    when(group.getName())
+      .thenReturn("Backend Team");
+
+    when(group.getImgUrl())
+      .thenReturn(null);
+
+    when(group.getDescription())
+      .thenReturn("Spring Boot developers");
+
+    when(group.getCode())
+      .thenReturn(GroupCode.fromString("ABC123456"));
+
+    when(group.getMemberCount())
+      .thenReturn(5);
+
+    // Act
+    var result = service.handle(query);
+
+    // Assert
+    assertThat(result).hasSize(1);
+
+    var dto = result.getFirst();
+
+    assertThat(dto.id()).isEqualTo(100L);
+    assertThat(dto.userId()).isEqualTo(30L);
+    assertThat(dto.username()).isEqualTo("member01");
+    assertThat(dto.name()).isEqualTo("Alice");
+    assertThat(dto.surname()).isEqualTo("Smith");
+    assertThat(dto.imgUrl()).isEqualTo("member-img.jpg");
+
+    assertThat(dto.groupId()).isEqualTo(50L);
+    assertThat(dto.groupName()).isEqualTo("Backend Team");
+    assertThat(dto.groupImgUrl()).isNull();
+    assertThat(dto.groupDescription()).isEqualTo("Spring Boot developers");
+    assertThat(dto.groupCode()).isEqualTo("ABC123456");
+    assertThat(dto.memberCount()).isEqualTo(5);
   }
 }
